@@ -1,4 +1,4 @@
-# Prototype-based Feature Selection with the Sofes Package
+# Prototype-Based Soft Feature Selection Package
 [Nana A. Otoo](https://github.com/naotoo1)
 
 This repository contains the code for the paper Prototype-based Feature Selection with the sofes Package (under construction)
