@@ -1339,7 +1339,7 @@ if __name__ == "__main__":
     regularization = parser.parse_args().regularization
     standard_scaler = StandardScaler()
     if dataset == "ozone":
-        input_data, labels = get_ozone_data("./data_m/eighthr.csv")
+        input_data, labels = get_ozone_data("./data/eighthr.csv")
         input_data = standard_scaler.fit_transform(
             input_data
             ) if eval_type == \
