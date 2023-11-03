@@ -5,9 +5,12 @@ This repository contains the code for the paper Prototype-based Feature Selectio
 
 
 ## Abstract
-This paper presents a soft prototype-based feature selection package designed as a wrapper
-centered on the highly interpretable Matrix Robust Soft Learning Vector Quantization
-(MRSLVQ) classification algorithm and its local variant (LMRSLVQ).The determination of feature relevance using sofes follows similar analogy enshrined in the Nafes package with the only discrepancy existing in the utilization of prototype-based induction learners inspired by a probabilistic framework. 
+This paper presents a prototype-based soft feature selection package (Sofes) wrapped around the
+highly interpretable Matrix Robust Soft Learning Vector Quantization (MRSLVQ) and the Local
+MRSLVQ algorithms. The process of assessing feature relevance with Sofes aligns with a comparable
+approach established in the Nafes package, with the primary distinction being the utilization of
+prototype-based induction learners influenced by a probabilistic framework. The numerical evaluation
+of test results aligns Sofes’ performance with that of the Nafes package
 [https://vixra.org/abs/2308.0112](https://vixra.org/abs/2308.0112)
 
 
