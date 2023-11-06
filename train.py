@@ -1455,7 +1455,3 @@ if __name__ == "__main__":
         print("significant_features_size=", len(significant_features))
         print("insignificant_features_size=", len(insignificant_features))
         print("tentative_features_size=", len(tentative_features))  # type: ignore
-
-
-
-## python train.py --dataset wdbc --model mrslvq --eval_type ho --reject_option --perturbation_ratio 0.2
