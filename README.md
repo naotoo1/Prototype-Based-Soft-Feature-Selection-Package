@@ -10,7 +10,7 @@ highly interpretable Matrix Robust Soft Learning Vector Quantization (MRSLVQ) an
 MRSLVQ algorithms. The process of assessing feature relevance with Sofes aligns with a comparable
 approach established in the Nafes package, with the primary distinction being the utilization of
 prototype-based induction learners influenced by a probabilistic framework. The numerical evaluation
-of test results aligns Sofes’ performance with that of the Nafes package
+of test results aligns Sofes’ performance with that of the Nafes package.
 [https://vixra.org/abs/2308.0112](https://vixra.org/abs/2308.0112)
 
 
