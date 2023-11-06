@@ -7,7 +7,7 @@ from typing import (
     Any,
     Union,
     List, 
-    Tuple
+    Tuple,
 )
 import logging
 import os
@@ -21,27 +21,25 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import numpy.linalg as ln
-from sklearn.metrics import accuracy_score
+# from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 from sklearn_lvq import (
     MrslvqModel,
     LmrslvqModel
 )
-from sklearn.preprocessing import MinMaxScaler, StandardScaler
+from sklearn.preprocessing import StandardScaler
 from sklearn.base import clone
 import matplotlib.pyplot as plt
-
-from dataset1 import DATA
+from dataset import DATA
 from mutate_labels import MutatedValidation
 from mutated_validation import (
     MutatedValidationScore,
     TrainRun,
     EvaluationMetricsType,
+    EvaluationMetric,
+    get_metric_score,
 )
-from proto_initializer import (
-    get_Kmeans_prototypes,
-    Initializer,
-)
+from proto_initializer import get_Kmeans_prototypes
 
 
 class Verbose(int, Enum):
@@ -174,6 +172,7 @@ def train_hold_out(
         model_name: str,
         latent_dim: int,
         init_prototypes:Union[np.ndarray,None],
+        init_matrix:Union[np.ndarray,None] =None,
         num_prototypes: int = 1,
         regularization: float = 0.0001,
         sigma: int = 1,
@@ -193,6 +192,7 @@ def train_hold_out(
         model=model_name,
         latent_dim=latent_dim,
         init_prototypes=init_prototypes,
+        init_matrix = init_matrix,
         num_prototypes=num_prototypes,
         regularization=regularization,
         sigma=sigma,
@@ -210,15 +210,21 @@ def train_hold_out(
     model.fit(X_train, y_train)
     prototypes.append(model.w_)
     if model_name == LVQ.MRSLVQ:
-        omega_matrix.append(model.omega_)  # type: ignore
+        omega_matrix.append(model.omega_)
     else:
-        omega_matrix.append(model.omegas_)  # type: ignore
+        omega_matrix.append(model.omegas_)  
 
     outputs = model.predict(X_test)
 
+    evaluation:EvaluationMetric = get_metric_score(
+        predicted_labels=outputs,
+        original_labels=y_test,
+        metric=evaluation_metric
+    )
+
     return TrainModelSummary(
         selected_model_evaluation_metrics_scores=[
-            accuracy_score(y_test, outputs)  # type: ignore
+            evaluation.metric_score
         ],
         final_omega_matrix=omega_matrix,
         final_prototypes=prototypes,
@@ -238,6 +244,7 @@ def train_model_by_mv(
         classwise: bool = False,
         random_state: Union[int, None] = None,
         init_prototypes:Union[np.ndarray,None]=None,
+        init_matrix:Union[np.ndarray,None] =None,
         num_prototypes: int = 1,
         perturbation_distribution: str = "balanced",
         perturbation_ratio: float = 0.2,
@@ -247,6 +254,7 @@ def train_model_by_mv(
         model=model_name,
         latent_dim=latent_dim,
         init_prototypes=init_prototypes,
+        init_matrix =init_matrix,
         num_prototypes=num_prototypes,
         regularization=regularization,
         sigma=sigma,
@@ -260,29 +268,30 @@ def train_model_by_mv(
     model_mv = clone(model)
 
     mutated_validation = MutatedValidation(
-        labels=labels.astype(np.int64),
+        # labels=labels.astype(np.int64),
+        labels=labels.astype(np.int),
         perturbation_ratio=perturbation_ratio,
         perturbation_distribution=perturbation_distribution
     )
 
-    mutate_list = mutated_validation.get_mutated_label_list  # use this list instead
+    mutate_list = mutated_validation.get_mutated_label_list 
     results, mv_score, prototypes, omega_matrix = [], [], [], []
     for train_runs in range(2):
         if train_runs == TrainRun.ORIGINAL:
             model.fit(input_data, labels)
             prototypes.append(model.w_)
             if model_name == LVQ.MRSLVQ:
-                omega_matrix.append(model.omega_)  # type: ignore
+                omega_matrix.append(model.omega_)  
             else:
-                omega_matrix.append(model.omegas_)  # type: ignore
+                omega_matrix.append(model.omegas_) 
             results.append(model.predict(input_data))
 
         if train_runs == TrainRun.MUTATED:
             model_mv.fit(input_data, mutate_list)
             if model_name == LVQ.MRSLVQ:
-                omega_matrix.append(model_mv.omega_)  # type: ignore
+                omega_matrix.append(model_mv.omega_)  
             else:
-                omega_matrix.append(model_mv.omegas_)  # type: ignore
+                omega_matrix.append(model_mv.omegas_)  
             results.append(model_mv.predict(input_data))
 
             mv_scorer = MutatedValidationScore(
@@ -305,6 +314,7 @@ def matrix_rslvq(
         model: str,
         latent_dim: int,
         init_prototypes:Union[np.ndarray,None],
+        init_matrix:Union[np.ndarray,None],
         num_prototypes: int,
         regularization: float,
         sigma: int,
@@ -318,6 +328,7 @@ def matrix_rslvq(
     if model == LVQ.MRSLVQ:
         return MrslvqModel(
             initial_prototypes=init_prototypes,
+            initial_matrix=init_matrix,
             prototypes_per_class=num_prototypes,
             regularization=regularization,
             initialdim=latent_dim,
@@ -327,9 +338,10 @@ def matrix_rslvq(
             display=display,
             random_state=random_state,
         )
-    # else:
     if model == LVQ.LMRSLVQ:
         return LmrslvqModel(
+            initial_prototypes=init_prototypes,
+            initial_matrices=init_matrix,
             prototypes_per_class=num_prototypes,
             regularization=regularization,
             initialdim=None,
@@ -340,9 +352,9 @@ def matrix_rslvq(
             random_state=random_state,
             classwise=classwise,
         )
-    # raise RuntimeError(
-    #     "specified_lvq: none of the models did match",
-    # )
+    raise RuntimeError(
+        "specified_lvq: none of the models did match",
+    )
 
 
 @dataclass
@@ -351,10 +363,12 @@ class TM:
     labels: np.ndarray
     model_name: str
     latent_dim: int
+    sigma:int
     num_classes: int
     init_prototypes:Union[np.ndarray,None]
+    init_matrix:Union[np.ndarray,None]
     num_prototypes: int
-    # optimal_search: str
+    random_state:Union[int,None]
     feature_list: Union[List[str], None] = None
     eval_type: Union[str, None] = None
     regularization: float = 0
@@ -377,17 +391,20 @@ class TM:
             labels=self.labels,
             model_name=self.model_name,
             latent_dim=self.latent_dim,
+            sigma=self.sigma,
             init_prototypes=self.init_prototypes,
             num_prototypes=self.num_prototypes + increment,
             # save_model=self.save_model,
             evaluation_metric=self.evaluation_metric,
             max_iter=self.max_epochs,
+            random_state=self.random_state
         )
 
     def train_mv(self, increment: int) -> TrainModelSummary:
         return train_model_by_mv(
             input_data=self.input_data,
             labels=self.labels,
+            sigma=self.sigma,
             model_name=self.model_name,
             latent_dim=self.latent_dim,
             num_prototypes=self.num_prototypes + increment,
@@ -396,6 +413,7 @@ class TM:
             perturbation_distribution=self.perturbation_distribution,
             perturbation_ratio=self.perturbation_ratio,
             max_iter=self.max_epochs,
+            random_state=self.random_state
         )
 
     @property
@@ -415,6 +433,7 @@ class TM:
             num_prototypes = (
                     len((train_eval_scheme.final_prototypes[0])) // self.num_classes
             )
+            print(num_prototypes)
             metric_list.append(validation_score[0])
             matrix_list.append(omega_matrix[0])
             if counter < self.patience:
@@ -547,13 +566,16 @@ class TM:
                 eval_score=validation_score,
                 num_prototypes=num_prototypes,
             )
+        raise RuntimeError(
+            "feature_selection: none of the above cases match"
+            )
 
     @property
     def summary_results(self):
         feature_selection = self.feature_selection
         if self.model_name == LVQ.LMRSLVQ and self.significance is True:
             summary = get_relevance_summary(
-                feature_significance=feature_selection.relevance.feature_significance,  # type: ignore
+                feature_significance=feature_selection.relevance.feature_significance,  
                 evaluation_metric_score=feature_selection.eval_score[0],
                 verbose=self.verbose,
             )
@@ -730,7 +752,6 @@ def get_relevance_global_summary(
         significant=significant,  # type: ignore
         insignificant=insignificant,  # type: ignore
     )
-
 
 def get_relevance_summary(
         feature_significance: np.ndarray,
@@ -1062,9 +1083,9 @@ def get_stability(
         raise RuntimeError(
             "get_stability: computational cost may be very high: consider metric case"
         )
-    # raise RuntimeError(
-    #     "get_stability: none of the cases match",
-    # )
+    raise RuntimeError(
+        "get_stability: none of the cases match",
+    )
 
 
 def visualize(
@@ -1219,9 +1240,9 @@ def reject(
         return LocalRejectStrategy(
             significant, insignificant, significant_hit, insignificant_hit, None
         )
-    # raise RuntimeError(
-    #     "reject:none of the above matches",
-    # )
+    raise RuntimeError(
+        "reject:none of the above matches",
+    )
 
 
 def get_rejection_summary(
@@ -1303,23 +1324,14 @@ if __name__ == "__main__":
     parser.add_argument("--eval_type", type=str, required=False, default="mv")
     parser.add_argument("--max_iter", type=int, required=False, default=100)
     parser.add_argument("--verbose", type=int, required=False, default=1)
-    parser.add_argument(
-        "--significance", action='store_true', default=False
-    )
+    parser.add_argument("--significance", action='store_true', default=False)
     parser.add_argument("--norm_ord", type=str, required=False, default="fro")
-    parser.add_argument(
-        "--evaluation_metric", type=str, required=False, default="accuracy"
-    )
+    parser.add_argument("--evaluation_metric", type=str, required=False, default="accuracy")
     parser.add_argument("--perturbation_ratio", type=float, required=False, default=0.2)
     parser.add_argument("--termination", type=str, required=False, default="metric")
-    parser.add_argument(
-        "--perturbation_distribution", type=str, required=False, default="global"
-    )
-    # parser.add_argument("--optimal_search", type=str, required=False, default="gpu")
+    parser.add_argument("--perturbation_distribution", type=str, required=False, default="global")
     parser.add_argument("--reject_option", action='store_true', default=False)
     parser.add_argument("--epsilon", type=float, required=False, default=0.05)
-    parser.add_argument("--proto_init", type=str, required=False, default="SMCI")
-    parser.add_argument("--omega_init", type=str, required=False, default="OLTI")
 
     model = parser.parse_args().model
     eval_type = parser.parse_args().eval_type
@@ -1329,7 +1341,6 @@ if __name__ == "__main__":
     verbose = parser.parse_args().verbose
     significance = parser.parse_args().significance
     norm_ord = parser.parse_args().norm_ord
-    # optimal_search = parser.parse_args().optimal_search
     evaluation_metric = parser.parse_args().evaluation_metric
     perturbation_ratio = parser.parse_args().perturbation_ratio
     termination = parser.parse_args().termination
@@ -1339,19 +1350,22 @@ if __name__ == "__main__":
     regularization = parser.parse_args().regularization
     standard_scaler = StandardScaler()
     if dataset == "ozone":
-        input_data, labels = get_ozone_data("./data/eighthr.csv")
+        input_data, labels = get_ozone_data("./data_m/eighthr.csv")
         input_data = standard_scaler.fit_transform(
             input_data
             ) if eval_type == \
                 ValidationType.MUTATEDVALIDATION.value else input_data
         num_classes = len(np.unique(labels))
         latent_dim = input_data.shape[1]
+        initializer = get_Kmeans_prototypes(
+            input_data=input_data,num_cluster=num_classes
+            ).Prototypes 
     elif dataset == "wdbc":
-        train_data = DATA(random=4)
+        train_data= DATA(random=4)
         input_data = standard_scaler.fit_transform(
             train_data.breast_cancer.input_data
             ) if eval_type == ValidationType.MUTATEDVALIDATION.value \
-                else train_data.breast_cancer.input_data
+                else train_data.breast_cancer.input_data  
         labels = train_data.breast_cancer.labels
         num_classes = len(np.unique(labels))
         latent_dim = input_data.shape[1]
@@ -1366,10 +1380,11 @@ if __name__ == "__main__":
         input_data=input_data,
         labels=labels,
         model_name=model,
-        # optimal_search=optimal_search,
         latent_dim=latent_dim,
+        sigma=1,
         num_classes=num_classes,
         init_prototypes=None,
+        init_matrix = None,
         num_prototypes=ppc,
         eval_type=eval_type,
         significance=significance,
@@ -1382,13 +1397,14 @@ if __name__ == "__main__":
         verbose=verbose,
         max_epochs=max_iter,
         regularization=regularization,
+        random_state=None,
     )
     summary = train.summary_results
 
     summary_significant = (
         summary.significant
         if model == LVQ.MRSLVQ.value
-        else summary.significant.features  # type: ignore
+        else summary.significant.features  
     )
     summary_insignificant = (
         summary.insignificant
@@ -1435,13 +1451,11 @@ if __name__ == "__main__":
             "insignificant_features=",
             insignificant_features,
         )
-
         print("tentative_features=", tentative_features)
-
         print("significant_features_size=", len(significant_features))
         print("insignificant_features_size=", len(insignificant_features))
         print("tentative_features_size=", len(tentative_features))  # type: ignore
 
 
 
-## python prototype_based_feature_extratctor1.py --dataset wdbc --model mrslvq --eval_type ho --reject_option --perturbation_ratio 0.2
+## python train.py --dataset wdbc --model mrslvq --eval_type ho --reject_option --perturbation_ratio 0.2
