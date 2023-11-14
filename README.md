@@ -41,5 +41,18 @@ python train.py --dataset ozone --model lmrslvq --eval_type ho --reject_option
 python train.py --dataset ozone --model lmrslvq --eval_type mv --reject_option
 
 ```
+
+```python
+usage: train.py [-h] [--ppc PPC] [--dataset DATASET] [--model MODEL]
+                [--sigma SIGMA] [--regularization REGULARIZATION]
+                [--eval_type EVAL_TYPE] [--max_iter MAX_ITER]
+                [--verbose VERBOSE] [--significance] [--norm_ord NORM_ORD]
+                [--evaluation_metric EVALUATION_METRIC]
+                [--perturbation_ratio PERTURBATION_RATIO]
+                [--termination TERMINATION]
+                [--perturbation_distribution PERTURBATION_DISTRIBUTION]
+                [--reject_option] [--epsilon EPSILON]
+```
+
  
 
