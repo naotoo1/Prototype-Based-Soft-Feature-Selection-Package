@@ -432,7 +432,6 @@ class TM:
             num_prototypes = (
                     len((train_eval_scheme.final_prototypes[0])) // self.num_classes
             )
-            print(num_prototypes)
             metric_list.append(validation_score[0])
             matrix_list.append(omega_matrix[0])
             if counter < self.patience:
@@ -965,7 +964,6 @@ def get_relevance_elimination_summary(
     )
 
     num_prototypes = len(weight_significance) // num_classes
-    print(num_prototypes)
 
     weight_significance = np.reshape(
         weight_significance, (num_classes, num_prototypes, input_dim)
