@@ -495,10 +495,10 @@ class TM:
     @property
     def feature_selection(self) -> Union[GlobalFeatureSelection, LocalFeatureSelection]:
         if (
-                self.model_name == LVQ.MRSLVQ
+                self.model_name == LVQ.MRSLVQ.value
                 and self.eval_type == ValidationType.MUTATEDVALIDATION.value
         ):
-            train_eval_scheme = self.final
+            train_eval_scheme = self.final  #move this out
             validation_score = train_eval_scheme.evaluation_metric_score
             omega_matrix = train_eval_scheme.omega_matrix
             relevance = get_lambda_matrix(
@@ -510,7 +510,7 @@ class TM:
                 num_prototypes=train_eval_scheme.num_prototypes,
             )
         if (
-                self.model_name == LVQ.MRSLVQ
+                self.model_name == LVQ.MRSLVQ.value
                 and self.eval_type == ValidationType.HOLDOUT.value
         ):
             train_eval_scheme = self.final
@@ -526,7 +526,7 @@ class TM:
             )
 
         if (
-                self.model_name == LVQ.LMRSLVQ
+                self.model_name == LVQ.LMRSLVQ.value
                 and self.eval_type == ValidationType.MUTATEDVALIDATION.value
         ):
             train_eval_scheme = self.final
@@ -546,7 +546,7 @@ class TM:
             )
 
         if (
-                self.model_name == LVQ.LMRSLVQ
+                self.model_name == LVQ.LMRSLVQ.value
                 and self.eval_type == ValidationType.HOLDOUT.value
         ):
             train_eval_scheme = self.final
@@ -1317,6 +1317,7 @@ if __name__ == "__main__":
     parser.add_argument("--ppc", type=int, required=False, default=1)
     parser.add_argument("--dataset", type=str, required=False, default="wdbc")
     parser.add_argument("--model", type=str, required=False, default=LVQ.MRSLVQ)
+    parser.add_argument("--sigma", type=float, required=False, default=1.0)
     parser.add_argument("--regularization", type=float, required=False, default=1.0)
     parser.add_argument("--eval_type", type=str, required=False, default="mv")
     parser.add_argument("--max_iter", type=int, required=False, default=100)
@@ -1332,6 +1333,7 @@ if __name__ == "__main__":
 
     model = parser.parse_args().model
     eval_type = parser.parse_args().eval_type
+    sigma = parser.parse_args().sigma
     ppc = parser.parse_args().ppc
     max_iter = parser.parse_args().max_iter
     dataset = parser.parse_args().dataset
@@ -1378,7 +1380,7 @@ if __name__ == "__main__":
         labels=labels,
         model_name=model,
         latent_dim=latent_dim,
-        sigma=1,
+        sigma=sigma,
         num_classes=num_classes,
         init_prototypes=None,
         init_matrix = None,
@@ -1438,17 +1440,20 @@ if __name__ == "__main__":
 
         print("----------------------With reject_strategy----------------------------")
         significant_features = rejected_strategy.significant
-        insignificant_features = rejected_strategy.insignificant
+        insignificant_features = list(set(rejected_strategy.insignificant) -\
+                                       set(rejected_strategy.tentative))
         tentative_features = rejected_strategy.tentative
         print(
             "significant_features=",
-            significant_features,
+            rejected_strategy.significant,
         )
+        
         print(
-            "insignificant_features=",
-            insignificant_features,
+            'insignificant_features=',
+            insignificant_features
         )
         print("tentative_features=", tentative_features)
+
         print("significant_features_size=", len(significant_features))
         print("insignificant_features_size=", len(insignificant_features))
         print("tentative_features_size=", len(tentative_features))  # type: ignore
