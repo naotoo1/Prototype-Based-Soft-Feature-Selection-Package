@@ -5,7 +5,7 @@ This repository contains the code for the paper Prototype-Based Soft Feature Sel
 
 
 ## Abstract
-This paper presents a prototype-based soft feature selection package ([Sofes](https://github.com/naotoo1/sofes)) wrapped around the
+This paper presents a prototype-based soft feature selection [package](https://pypi.org/project/sofes/) ([Sofes](https://github.com/naotoo1/sofes)) wrapped around the
 highly interpretable Matrix Robust Soft Learning Vector Quantization (MRSLVQ) and the Local
 MRSLVQ algorithms. The process of assessing feature relevance with Sofes aligns with a comparable
 approach established in the Nafes package, with the primary distinction being the utilization of
