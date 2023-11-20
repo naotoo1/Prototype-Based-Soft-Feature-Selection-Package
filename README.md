@@ -1,17 +1,18 @@
 # Prototype-Based Soft Feature Selection Package
 [Nana A. Otoo](https://github.com/naotoo1)
 
-This repository contains the code for the paper Prototype-based Feature Selection with the sofes Package
+This repository contains the code for the paper Prototype-based Feature Selection with the [Sofes](https://pypi.org/project/sofes/) Package
 
 
 ## Abstract
-This paper presents a prototype-based soft feature selection package [Sofes](https://pypi.org/project/sofes/) wrapped around the
+This paper presents a prototype-based soft feature selection package ([Sofes](https://pypi.org/project/sofes/)) wrapped around the
 highly interpretable Matrix Robust Soft Learning Vector Quantization (MRSLVQ) and the Local
 MRSLVQ algorithms. The process of assessing feature relevance with Sofes aligns with a comparable
 approach established in the Nafes package, with the primary distinction being the utilization of
 prototype-based induction learners influenced by a probabilistic framework. The numerical evaluation
 of test results aligns Sofes’ performance with that of the Nafes package.
 [https://vixra.org/abs/2308.0112](https://vixra.org/abs/2311.0089)
+
 
 
 The implementation requires Python >=3.6 . The author recommends to use a virtual environment or Docker image.
